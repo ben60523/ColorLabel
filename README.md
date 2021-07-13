@@ -1,7 +1,7 @@
 # ColorLabel
 
 ## Usage
-1. 用繪圖板將原圖用**黃色**或**綠色**圈選欲標記的地方，並將標記好的圖放到同一資料夾下
+1. 用繪圖板或滑鼠將原圖用**黃色**或**綠色**圈選欲標記的地方，並將標記好的圖放到同一資料夾下
 2. 執行下方指令：
 ```
 python label.py --input_path <path_to_input_dir> --output_path <path_to_output_dir>
