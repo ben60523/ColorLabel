@@ -6,25 +6,6 @@ from tqdm import tqdm
 import argparse
 
 
-def getColorList():
-    dict = collections.defaultdict(list)
-    #yellow
-    # lower_yellow = np.array([26, 43, 46])
-    lower_yellow = np.array([23, 43, 46])
-    upper_yellow = np.array([34, 255, 255])
-    color_list = []
-    color_list.append(lower_yellow)
-    color_list.append(upper_yellow)
-    dict['yellow'] = color_list
-    #green
-    lower_green = np.array([35, 43, 46])
-    upper_green = np.array([77, 255, 255])
-    color_list = []
-    color_list.append(lower_green)
-    color_list.append(upper_green)
-    dict['green'] = color_list
-    return dict
-
 def fill_contours(arr):
     return np.maximum.accumulate(arr, 1) &\
            np.maximum.accumulate(arr[:, ::-1], 1)[:, ::-1] &\
