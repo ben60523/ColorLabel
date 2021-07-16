@@ -83,8 +83,8 @@ def mask_generate(img):
     hsv = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
     
     # find green contour
-    lower_green = np.array([35, 43, 46])
-    upper_green = np.array([77, 255, 255])
+    lower_green = np.array([38, 43, 46])
+    upper_green = np.array([75, 255, 255])
     green_mask = cv2.inRange(hsv, lower_green, upper_green)
     bool_mask = np.where((green_mask == 255), 1, 0).astype(int)
     
