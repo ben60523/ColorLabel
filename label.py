@@ -167,7 +167,8 @@ if __name__ == '__main__':
                 name = img['name'] ## Image name
                 try: ## Get height and width of image
                     img = cv2.imread(os.path.join(args.input_path, name))
-                    img = cv2.imread(os.path.join(args.input_path, 'images', name))
+                    if img is None:
+                        img = cv2.imread(os.path.join(args.input_path, 'images', name))
                     h, w, ch = img.shape
                 except:
                     print('\nThe image file is missing (%s)\n'%name)
