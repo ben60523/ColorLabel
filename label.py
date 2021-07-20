@@ -191,7 +191,7 @@ if __name__ == '__main__':
 
                     for point in point_list:
                         points = np.append(points, [[point['left'], point['top']]], 0)
-
+                    points = np.delete(points, 0, 0)
                     if tag_name == 'congestion':
                         cv2.polylines(congestion_mask, np.int32([points]), False, (255, 255, 255))
                     elif tag_name == 'lesion':
