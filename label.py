@@ -177,7 +177,6 @@ if __name__ == '__main__':
                 congestion_mask = np.zeros(mask_shape,np.uint8)
                 lesion_mask = np.zeros(mask_shape,np.uint8)
                 normal_mask = np.zeros(mask_shape,np.uint8)
-
                 for i in range(nb_tags):
                     point_list = tag_list[i]['points']
                     tag_id = tag_list[i]['labelID']
@@ -187,28 +186,31 @@ if __name__ == '__main__':
                             tag_name = label['title']
                             break
                     
+                    dilate_matrix = np.arange(-9, 9)
+                    points = np.empty((1,2))
+
                     for point in point_list:
-                        if tag_name == 'congestion':
-                            congestion_mask[point['top'], point['left']] = 1
-                        elif tag_name == 'lesion':
-                            lesion_mask[point['top'], point['left']] = 1
-                        elif tag_name == 'normal':
-                            normal_mask[point['top'], point['left']] = 1
+                        points = np.append(points, [[point['left'], point['top']]], 0)
+
+                    if tag_name == 'congestion':
+                        cv2.polylines(congestion_mask, np.int32([points]), False, (255, 255, 255))
+                    elif tag_name == 'lesion':
+                        cv2.polylines(lesion_mask, np.int32([points]), True, (255, 255, 255))
+                    elif tag_name == 'normal':
+                        cv2.polylines(normal_mask, np.int32([points]), True, (255, 255, 255))
                 
+                kernel = np.ones((3, 3), np.uint8)
                 if congestion_mask.max() > 0:
-                    fill_mask = fill_contours(congestion_mask.astype(np.uint8)) * 255
-                    kernel = np.ones((2, 2), np.uint8)
+                    fill_mask = fill_contours(congestion_mask)
                     output_mask = cv2.dilate(fill_mask, kernel)
-                    cv2.imwrite(os.path.join(args.output_path, name[:(len(name)-4)] + '_%s'%tag_name + name[(len(name)-4):]), output_mask)
+                    cv2.imwrite(os.path.join(args.output_path, name[:(len(name)-4)] + '_congestion' + name[(len(name)-4):]), output_mask)
                     
                 if lesion_mask.max() > 0:
-                    fill_mask = fill_contours(lesion_mask.astype(np.uint8)) * 255
-                    kernel = np.ones((2, 2), np.uint8)
+                    fill_mask = fill_contours(lesion_mask)
                     output_mask = cv2.dilate(fill_mask, kernel)
-                    cv2.imwrite(os.path.join(args.output_path, name[:(len(name)-4)] + '_%s'%tag_name + name[(len(name)-4):]), output_mask)
+                    cv2.imwrite(os.path.join(args.output_path, name[:(len(name)-4)] + '_lesion' + name[(len(name)-4):]), output_mask)
                     
                 if normal_mask.max() > 0:
-                    fill_mask = fill_contours(normal_mask.astype(np.uint8)) * 255
-                    kernel = np.ones((2, 2), np.uint8)
+                    fill_mask = fill_contours(normal_mask)
                     output_mask = cv2.dilate(fill_mask, kernel)
-                    cv2.imwrite(os.path.join(args.output_path, name[:(len(name)-4)] + '_%s'%tag_name + name[(len(name)-4):]), output_mask)
+                    cv2.imwrite(os.path.join(args.output_path, name[:(len(name)-4)] + '_normal' + name[(len(name)-4):]), output_mask)
