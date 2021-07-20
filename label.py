@@ -164,53 +164,68 @@ if __name__ == '__main__':
             tag_list = img['tags']
             nb_tags = len(tag_list)
             if nb_tags > 0:
-                name = img['name']
-                try:
+                name = img['name'] ## Image name
+                try: ## Get height and width of image
                     img = cv2.imread(os.path.join(args.input_path, name))
+                    img = cv2.imread(os.path.join(args.input_path, 'images', name))
                     h, w, ch = img.shape
                 except:
                     print('\nThe image file is missing (%s)\n'%name)
                     exit(-1)
                 
+                ## label.json: tag info
                 labels_list = json.load(open(os.path.join(args.input_path, 'labels.json')))
                 mask_shape = (h, w)
                 congestion_mask = np.zeros(mask_shape,np.uint8)
                 lesion_mask = np.zeros(mask_shape,np.uint8)
                 normal_mask = np.zeros(mask_shape,np.uint8)
                 for i in range(nb_tags):
+                    ## Check tag type
+                    if tag_list[i]['type'] != 'painting':
+                        continue
+                    
                     point_list = tag_list[i]['points']
                     tag_id = tag_list[i]['labelID']
                     tag_name = ''
+                    ## Get tag name
                     for label in labels_list:
                         if label['key'] == tag_id:
                             tag_name = label['title']
                             break
                     
-                    dilate_matrix = np.arange(-9, 9)
                     points = np.empty((1,2))
-
+                    ## Get trajectory of the tag
                     for point in point_list:
                         points = np.append(points, [[point['left'], point['top']]], 0)
                     points = np.delete(points, 0, 0)
+
+                    tag_mask = np.zeros(mask_shape,np.uint8)
+
                     if tag_name == 'congestion':
-                        cv2.polylines(congestion_mask, np.int32([points]), False, (255, 255, 255))
+                        cv2.polylines(tag_mask, np.int32([points]), False, (255, 255, 255)) ## Draw the contour of points
+                        tag_mask = fill_contours(tag_mask) ## Fill the contour
+                        cv2.add(congestion_mask, tag_mask, congestion_mask) ## Add tag into mask
                     elif tag_name == 'lesion':
-                        cv2.polylines(lesion_mask, np.int32([points]), True, (255, 255, 255))
+                        cv2.polylines(tag_mask, np.int32([points]), False, (255, 255, 255))
+                        tag_mask = fill_contours(tag_mask)
+                        cv2.add(lesion_mask, tag_mask, lesion_mask)
                     elif tag_name == 'normal':
-                        cv2.polylines(normal_mask, np.int32([points]), True, (255, 255, 255))
+                        cv2.polylines(tag_mask, np.int32([points]), False, (255, 255, 255))
+                        tag_mask = fill_contours(tag_mask)
+                        cv2.add(normal_mask, tag_mask, normal_mask)
                 
                 kernel = np.ones((3, 3), np.uint8)
                 if congestion_mask.max() > 0:
-                    fill_mask = fill_contours(congestion_mask)
-                    output_mask = cv2.dilate(fill_mask, kernel)
-                    cv2.imwrite(os.path.join(args.output_path, name[:(len(name)-4)] + '_congestion' + name[(len(name)-4):]), output_mask)
+                    congestion_mask = cv2.dilate(congestion_mask, kernel)
+                    ## Generate mask (file name: {origin_image_name}_congestion.jpg)
+                    cv2.imwrite(os.path.join(args.output_path, name[:(len(name)-4)] + '_congestion' + name[(len(name)-4):]), congestion_mask)
                     
                 if lesion_mask.max() > 0:
-                    fill_mask = fill_contours(lesion_mask)
-                    output_mask = cv2.dilate(fill_mask, kernel)
-                    cv2.imwrite(os.path.join(args.output_path, name[:(len(name)-4)] + '_lesion' + name[(len(name)-4):]), output_mask)
+                    lesion_mask = cv2.dilate(lesion_mask, kernel)
+                    ## Generate mask (file name: {origin_image_name}_lesion.jpg)
+                    cv2.imwrite(os.path.join(args.output_path, name[:(len(name)-4)] + '_lesion' + name[(len(name)-4):]), lesion_mask)
                     
                 if normal_mask.max() > 0:
-                    fill_mask = fill_contours(normal_mask)
-                    output_mask = cv2.dilate(fill_mask, kernel)
-                    cv2.imwrite(os.path.join(args.output_path, name[:(len(name)-4)] + '_normal' + name[(len(name)-4):]), output_mask)
+                    normal_mask = cv2.dilate(normal_mask, kernel)
+                    ## Generate mask (file name: {origin_image_name}_normal.jpg)
+                    cv2.imwrite(os.path.join(args.output_path, name[:(len(name)-4)] + '_normal' + name[(len(name)-4):]), normal_mask)
