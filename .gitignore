@@ -26,6 +26,7 @@ share/python-wheels/
 *.egg
 *.joblib
 *.JPG
+*.png
 MANIFEST
 
 # PyInstaller
@@ -143,10 +144,13 @@ cython_debug/
 .vscode/* 
 .vscode/settings.json 
 !.vscode/tasks.json 
-!.vscode/launch.json 
+.vscode/launch.json 
 !.vscode/extensions.json 
 !set_for_one_class/abnormal/*.JPG
 .history
 
 #MAC OS
 .DS_Store
+
+#project
+*.json
