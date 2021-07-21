@@ -1,7 +1,6 @@
 import cv2
 import json
 import numpy as np
-import collections
 import os
 from tqdm import tqdm
 import argparse
@@ -87,13 +86,6 @@ def generate_mask_by_color(img):
     lower_green = np.array([38, 43, 46])
     upper_green = np.array([75, 255, 255])
 
-    lower_yellow = np.array([26, 43, 46])
-    upper_yellow = np.array([37, 255, 255])
-
-    # yellow_mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
-    # yellow_mask = cv2.morphologyEx(yellow_mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
-    # bool_mask = np.where((yellow_mask == 255), 1, 0).astype(int)
-
     green_mask = cv2.inRange(hsv, lower_green, upper_green)
     green_mask = cv2.morphologyEx(green_mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
     bool_mask = np.where((green_mask == 255), 1, 0).astype(int)
@@ -166,17 +158,17 @@ if __name__ == '__main__':
             if nb_tags > 0:
                 name = img['name']
                 try:
-                    img = cv2.imread(os.path.join(args.input_path, name))
+                    img = cv2.imread(os.path.join(args.input_path, "images", name))
                     h, w, ch = img.shape
                 except:
                     print('\nThe image file is missing (%s)\n'%name)
                     exit(-1)
                 
                 labels_list = json.load(open(os.path.join(args.input_path, 'labels.json')))
-                mask_shape = (h, w)
-                congestion_mask = np.zeros(mask_shape,np.uint8)
-                lesion_mask = np.zeros(mask_shape,np.uint8)
-                normal_mask = np.zeros(mask_shape,np.uint8)
+                mask_shape = (h, w, 3)
+                congestion_mask = np.zeros(mask_shape, np.uint8)
+                lesion_mask = np.zeros(mask_shape, np.uint8)
+                normal_mask = np.zeros(mask_shape, np.uint8)
                 for i in range(nb_tags):
                     point_list = tag_list[i]['points']
                     tag_id = tag_list[i]['labelID']
@@ -186,31 +178,27 @@ if __name__ == '__main__':
                             tag_name = label['title']
                             break
                     
-                    dilate_matrix = np.arange(-9, 9)
                     points = np.empty((1,2))
-
                     for point in point_list:
                         points = np.append(points, [[point['left'], point['top']]], 0)
                     points = np.delete(points, 0, 0)
+
                     if tag_name == 'congestion':
-                        cv2.polylines(congestion_mask, np.int32([points]), False, (255, 255, 255))
+                        cv2.drawContours(congestion_mask, np.int32([points]), -1, (255, 255, 255), thickness=-1)
                     elif tag_name == 'lesion':
-                        cv2.polylines(lesion_mask, np.int32([points]), True, (255, 255, 255))
+                        cv2.drawContours(lesion_mask, np.int32([points]), -1, (255, 255, 255), thickness=-1)
                     elif tag_name == 'normal':
-                        cv2.polylines(normal_mask, np.int32([points]), True, (255, 255, 255))
+                        cv2.drawContours(normal_mask, np.int32([points]), -1, (255, 255, 255), thickness=-1)
                 
                 kernel = np.ones((3, 3), np.uint8)
                 if congestion_mask.max() > 0:
-                    fill_mask = fill_contours(congestion_mask)
-                    output_mask = cv2.dilate(fill_mask, kernel)
+                    output_mask = cv2.dilate(congestion_mask, kernel)
                     cv2.imwrite(os.path.join(args.output_path, name[:(len(name)-4)] + '_congestion' + name[(len(name)-4):]), output_mask)
                     
                 if lesion_mask.max() > 0:
-                    fill_mask = fill_contours(lesion_mask)
-                    output_mask = cv2.dilate(fill_mask, kernel)
+                    output_mask = cv2.dilate(lesion_mask, kernel)
                     cv2.imwrite(os.path.join(args.output_path, name[:(len(name)-4)] + '_lesion' + name[(len(name)-4):]), output_mask)
                     
                 if normal_mask.max() > 0:
-                    fill_mask = fill_contours(normal_mask)
-                    output_mask = cv2.dilate(fill_mask, kernel)
+                    output_mask = cv2.dilate(normal_mask, kernel)
                     cv2.imwrite(os.path.join(args.output_path, name[:(len(name)-4)] + '_normal' + name[(len(name)-4):]), output_mask)
